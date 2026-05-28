@@ -24,16 +24,17 @@
     .correct { color: #166534; font-weight: bold; }
     .wrong { color: #b91c1c; font-weight: bold; }
     .muted { color: #555; font-size: 14px; }
+    .retake { background: #166534; margin-top: 20px; }
+    .retake:hover { background: #14532d; }
   </style>
 </head>
-
 <body oncontextmenu="return false">
   <div class="container" id="startBox">
     <h1>Economics Quiz</h1>
     <h2>Topic: Public Finance</h2>
     <div class="warning">
       This quiz must be taken in full-screen mode. Copying, right-clicking, printing, inspecting, and leaving the page are not allowed.
-      Your score will show immediately after submission. Wrong answers will show correction after submission.
+      Your score will show immediately after submission. Wrong answers will show correction after submission. You can take again with different questions.
     </div>
     <input type="text" id="studentName" placeholder="Enter your full name">
     <button onclick="startQuiz()">Start Quiz</button>
@@ -42,7 +43,7 @@
   <div class="container" id="quizBox">
     <h1>Economics Quiz</h1>
     <h2>Public Finance</h2>
-    <p><strong>Instruction:</strong> Choose the correct option. You can submit only once.</p>
+    <p><strong>Instruction:</strong> Choose the correct option. Each attempt gives a different set of questions.</p>
     <form id="quizForm"></form>
     <button type="button" onclick="submitQuiz()">Submit Quiz</button>
   </div>
@@ -53,17 +54,14 @@
     <div class="score" id="scoreText"></div>
     <p style="text-align:center;">Your score has been recorded.</p>
     <div class="review-box" id="reviewBox"></div>
+    <button class="retake" onclick="retakeQuiz()">Do you want to take again? Click here for different questions</button>
   </div>
 
-  <div class="locked" id="lockedBox">
-    Quiz locked because you left the page or attempted a restricted action.
-  </div>
+  <div class="locked" id="lockedBox">Quiz locked because you left the page or attempted a restricted action.</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCgdl-oI3jrvTarOOzEqd791ZhE_CGBv6A",
@@ -77,30 +75,38 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
+    const QUESTIONS_PER_ATTEMPT = 20;
     let studentName = "";
     let locked = false;
+    let allQuestions = [];
     let questions = [];
 
     function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+        [copy[i], copy[j]] = [copy[j], copy[i]];
       }
-      return array;
+      return copy;
     }
 
     async function fetchQuestions() {
       try {
         const q = query(collection(db, "quizQuestions"), where("active", "==", true), orderBy("createdAt", "asc"));
         const snapshot = await getDocs(q);
-        questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        allQuestions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        if (questions.length === 0) {
+        if (allQuestions.length === 0) {
           alert("No questions available yet. Contact the teacher.");
           return false;
         }
 
+        const lastUsed = JSON.parse(localStorage.getItem("lastUsedQuestionIds") || "[]");
+        let fresh = allQuestions.filter(item => !lastUsed.includes(item.id));
+        if (fresh.length < Math.min(QUESTIONS_PER_ATTEMPT, allQuestions.length)) fresh = allQuestions;
+
+        questions = shuffleArray(fresh).slice(0, Math.min(QUESTIONS_PER_ATTEMPT, fresh.length));
+        localStorage.setItem("lastUsedQuestionIds", JSON.stringify(questions.map(q => q.id)));
         return true;
       } catch (error) {
         console.error(error);
@@ -111,36 +117,31 @@
 
     window.startQuiz = async function() {
       studentName = document.getElementById("studentName").value.trim();
-
-      if (studentName === "") {
-        alert("Please enter your full name.");
-        return;
-      }
-
-      if (localStorage.getItem("publicFinanceQuizSubmitted") === "yes") {
-        alert("You have already submitted this quiz on this device.");
-        return;
-      }
-
-      document.documentElement.requestFullscreen().catch(() => {
-        alert("Please allow full-screen mode to continue.");
-      });
-
+      if (studentName === "") { alert("Please enter your full name."); return; }
+      document.documentElement.requestFullscreen().catch(() => alert("Please allow full-screen mode to continue."));
       const loaded = await fetchQuestions();
       if (!loaded) return;
-
-      questions = shuffleArray(questions);
-
       document.getElementById("startBox").style.display = "none";
+      document.getElementById("resultBox").style.display = "none";
       document.getElementById("quizBox").style.display = "block";
-
       loadQuiz();
+    }
+
+    window.retakeQuiz = async function() {
+      locked = false;
+      document.getElementById("resultBox").style.display = "none";
+      document.getElementById("quizBox").style.display = "none";
+      document.getElementById("lockedBox").style.display = "none";
+      const loaded = await fetchQuestions();
+      if (!loaded) return;
+      document.getElementById("quizBox").style.display = "block";
+      loadQuiz();
+      window.scrollTo(0, 0);
     }
 
     function loadQuiz() {
       const form = document.getElementById("quizForm");
       form.innerHTML = "";
-
       questions.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "question";
@@ -149,65 +150,46 @@
           <label><input type="radio" name="q${index}" value="A"> A. ${escapeHtml(item.options[0])}</label>
           <label><input type="radio" name="q${index}" value="B"> B. ${escapeHtml(item.options[1])}</label>
           <label><input type="radio" name="q${index}" value="C"> C. ${escapeHtml(item.options[2])}</label>
-          <label><input type="radio" name="q${index}" value="D"> D. ${escapeHtml(item.options[3])}</label>
-        `;
+          <label><input type="radio" name="q${index}" value="D"> D. ${escapeHtml(item.options[3])}</label>`;
         form.appendChild(div);
       });
     }
 
     window.submitQuiz = async function() {
       if (locked) return;
-
-      let score = 0;
-      let answers = [];
-      let wrongAnswers = [];
-
+      let score = 0, answers = [], wrongAnswers = [];
       for (let i = 0; i < questions.length; i++) {
         const selected = document.querySelector(`input[name="q${i}"]:checked`);
-
-        if (!selected) {
-          alert("Please answer all questions before submitting.");
-          return;
-        }
-
+        if (!selected) { alert("Please answer all questions before submitting."); return; }
         const isCorrect = selected.value === questions[i].answer;
         if (isCorrect) score++;
-
         const correctIndex = letterToIndex(questions[i].answer);
         const selectedIndex = letterToIndex(selected.value);
-
         const answerRecord = {
           questionNumber: i + 1,
+          questionId: questions[i].id,
           question: questions[i].q,
           selected: selected.value,
           selectedText: questions[i].options[selectedIndex],
           correct: questions[i].answer,
           correctText: questions[i].options[correctIndex],
-          isCorrect: isCorrect
+          isCorrect
         };
-
         answers.push(answerRecord);
         if (!isCorrect) wrongAnswers.push(answerRecord);
       }
-
       try {
+        const attemptNumber = Number(localStorage.getItem("attemptCount") || "0") + 1;
+        localStorage.setItem("attemptCount", String(attemptNumber));
         await addDoc(collection(db, "quizResults"), {
-          name: studentName,
-          score: score,
-          total: questions.length,
-          answers: answers,
-          submittedAt: serverTimestamp()
+          name: studentName, score, total: questions.length, attemptNumber, answers,
+          questionIds: questions.map(q => q.id), submittedAt: serverTimestamp()
         });
-
-        localStorage.setItem("publicFinanceQuizSubmitted", "yes");
-
         document.getElementById("quizBox").style.display = "none";
         document.getElementById("resultBox").style.display = "block";
-        document.getElementById("studentResult").innerText = "Student: " + studentName;
+        document.getElementById("studentResult").innerText = "Student: " + studentName + " | Attempt: " + attemptNumber;
         document.getElementById("scoreText").innerText = score + "/" + questions.length;
-
         showReview(wrongAnswers);
-
       } catch (error) {
         alert("Result could not be saved. Check internet or Firebase setup.");
         console.error(error);
@@ -216,40 +198,19 @@
 
     function showReview(wrongAnswers) {
       const reviewBox = document.getElementById("reviewBox");
-
       if (wrongAnswers.length === 0) {
         reviewBox.innerHTML = `<h2>Correction</h2><p class="correct">Excellent. You did not miss any question.</p>`;
         return;
       }
-
       let html = `<h2>Correction for Wrong Answers</h2><p class="muted">Only the questions you failed are shown below.</p>`;
-
       wrongAnswers.forEach(item => {
-        html += `
-          <div class="wrong-item">
-            <strong>Question ${item.questionNumber}:</strong> ${escapeHtml(item.question)}<br>
-            <span class="wrong">Your answer:</span> ${item.selected}. ${escapeHtml(item.selectedText)}<br>
-            <span class="correct">Correct answer:</span> ${item.correct}. ${escapeHtml(item.correctText)}
-          </div>
-        `;
+        html += `<div class="wrong-item"><strong>Question ${item.questionNumber}:</strong> ${escapeHtml(item.question)}<br><span class="wrong">Your answer:</span> ${item.selected}. ${escapeHtml(item.selectedText)}<br><span class="correct">Correct answer:</span> ${item.correct}. ${escapeHtml(item.correctText)}</div>`;
       });
-
       reviewBox.innerHTML = html;
     }
 
-    function letterToIndex(letter) {
-      return { A: 0, B: 1, C: 2, D: 3 }[String(letter).trim().toUpperCase()];
-    }
-
-    function escapeHtml(text) {
-      return String(text ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
+    function letterToIndex(letter) { return { A: 0, B: 1, C: 2, D: 3 }[String(letter).trim().toUpperCase()]; }
+    function escapeHtml(text) { return String(text ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;"); }
     function lockQuiz() {
       if (document.getElementById("quizBox").style.display === "block") {
         locked = true;
@@ -257,35 +218,19 @@
         document.getElementById("lockedBox").style.display = "block";
       }
     }
-
     document.addEventListener("copy", e => e.preventDefault());
     document.addEventListener("cut", e => e.preventDefault());
     document.addEventListener("paste", e => e.preventDefault());
-
-    document.addEventListener("selectstart", function(e) {
-      if (e.target.id !== "studentName") e.preventDefault();
-    });
-
-    document.addEventListener("keydown", function(e) {
+    document.addEventListener("selectstart", e => { if (e.target.id !== "studentName") e.preventDefault(); });
+    document.addEventListener("keydown", e => {
       const key = e.key.toLowerCase();
-      if (
-        (e.ctrlKey && ["c", "x", "v", "s", "p", "u", "a"].includes(key)) ||
-        (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) ||
-        e.key === "PrintScreen" ||
-        e.key === "F12"
-      ) {
-        e.preventDefault();
-        alert("This action is not allowed.");
-        lockQuiz();
+      if ((e.ctrlKey && ["c", "x", "v", "s", "p", "u", "a"].includes(key)) || (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) || e.key === "PrintScreen" || e.key === "F12") {
+        e.preventDefault(); alert("This action is not allowed."); lockQuiz();
       }
     });
-
-    document.addEventListener("visibilitychange", function() {
-      if (document.hidden) lockQuiz();
-    });
-
-    window.addEventListener("blur", function() { lockQuiz(); });
-    window.addEventListener("beforeprint", function() { lockQuiz(); });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) lockQuiz(); });
+    window.addEventListener("blur", () => lockQuiz());
+    window.addEventListener("beforeprint", () => lockQuiz());
   </script>
 </body>
 </html>
