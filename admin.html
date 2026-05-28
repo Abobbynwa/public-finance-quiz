@@ -4,165 +4,39 @@
   <meta charset="UTF-8">
   <title>Quiz Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-      color: #111;
-    }
-
-    .container {
-      max-width: 1150px;
-      margin: auto;
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-
-    h1, h2, h3 {
-      text-align: center;
-    }
-
-    input, textarea, select {
-      width: 100%;
-      padding: 14px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    button {
-      padding: 10px 15px;
-      background: #111827;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 4px 0;
-    }
-
-    button:hover {
-      background: #000;
-    }
-
-    .login-btn, .full-btn {
-      width: 100%;
-      padding: 14px;
-      font-size: 16px;
-    }
-
-    #dashboardBox {
-      display: none;
-      margin-top: 25px;
-    }
-
-    .section {
-      border: 1px solid #ddd;
-      background: #fafafa;
-      padding: 18px;
-      border-radius: 12px;
-      margin-bottom: 25px;
-    }
-
-    .summary {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-
-    .card {
-      flex: 1;
-      min-width: 180px;
-      background: #f9fafb;
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 10px;
-      text-align: center;
-    }
-
-    .card strong {
-      font-size: 24px;
-      display: block;
-      margin-top: 8px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-
-    th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    th {
-      background: #111827;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background: #f9f9f9;
-    }
-
-    .score {
-      font-weight: bold;
-      font-size: 18px;
-    }
-
-    .pass {
-      color: green;
-    }
-
-    .fail {
-      color: red;
-    }
-
-    .details {
-      white-space: pre-wrap;
-      font-size: 13px;
-      background: #f1f1f1;
-      padding: 10px;
-      border-radius: 8px;
-      display: none;
-      margin-top: 8px;
-      line-height: 1.6;
-    }
-
-    .danger {
-      background: #b91c1c;
-    }
-
-    .danger:hover {
-      background: #7f1d1d;
-    }
-
-    .success {
-      background: #166534;
-    }
-
-    .success:hover {
-      background: #14532d;
-    }
+    body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 20px; color: #111; }
+    .container { max-width: 1180px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h1, h2, h3 { text-align: center; }
+    input, textarea, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    textarea { min-height: 80px; resize: vertical; }
+    button { padding: 10px 15px; background: #111827; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 4px 0; }
+    button:hover { background: #000; }
+    .login-btn, .full-btn { width: 100%; padding: 14px; font-size: 16px; }
+    #dashboardBox { display: none; margin-top: 25px; }
+    .section { border: 1px solid #ddd; background: #fafafa; padding: 18px; border-radius: 12px; margin-bottom: 25px; }
+    .summary { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+    .card { flex: 1; min-width: 180px; background: #f9fafb; border: 1px solid #ddd; padding: 15px; border-radius: 10px; text-align: center; }
+    .card strong { font-size: 24px; display: block; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #111827; color: white; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .score { font-weight: bold; font-size: 18px; }
+    .pass { color: green; }
+    .fail { color: red; }
+    .details { white-space: pre-wrap; font-size: 13px; background: #f1f1f1; padding: 10px; border-radius: 8px; display: none; margin-top: 8px; line-height: 1.6; }
+    .danger { background: #b91c1c; }
+    .danger:hover { background: #7f1d1d; }
+    .success { background: #166534; }
+    .success:hover { background: #14532d; }
+    .info { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; line-height: 1.6; margin-bottom: 15px; }
+    .preview-count { font-weight: bold; color: #166534; }
   </style>
 </head>
 
 <body>
-
   <div class="container">
     <h1>Quiz Admin Dashboard</h1>
     <h2>Economics: Public Finance</h2>
@@ -173,17 +47,42 @@
     </div>
 
     <div id="dashboardBox">
+      <div class="section">
+        <h2>Upload Questions File</h2>
+        <div class="info">
+          Upload Excel or CSV with these headers: <strong>Question, A, B, C, D, Correct Answer</strong>.<br>
+          Correct Answer must be only <strong>A, B, C, or D</strong>.<br>
+          When you click <strong>Upload & Replace Active Questions</strong>, old active questions will be disabled and the uploaded questions will become active.
+        </div>
+
+        <input type="file" id="questionFile" accept=".xlsx,.xls,.csv">
+        <button class="full-btn" onclick="previewQuestionFile()">Preview File</button>
+        <button class="full-btn success" onclick="uploadQuestionFile()">Upload & Replace Active Questions</button>
+        <p id="uploadPreview" class="preview-count"></p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Question</th>
+              <th>A</th>
+              <th>B</th>
+              <th>C</th>
+              <th>D</th>
+              <th>Answer</th>
+            </tr>
+          </thead>
+          <tbody id="uploadPreviewTable"></tbody>
+        </table>
+      </div>
 
       <div class="section">
-        <h2>Add / Push New Question</h2>
-
+        <h2>Add One Question Manually</h2>
         <textarea id="newQuestion" placeholder="Enter question"></textarea>
-
         <input type="text" id="optionA" placeholder="Option A">
         <input type="text" id="optionB" placeholder="Option B">
         <input type="text" id="optionC" placeholder="Option C">
         <input type="text" id="optionD" placeholder="Option D">
-
         <select id="correctAnswer">
           <option value="">Select correct answer</option>
           <option value="A">A</option>
@@ -191,14 +90,12 @@
           <option value="C">C</option>
           <option value="D">D</option>
         </select>
-
-        <button class="full-btn success" onclick="addNewQuestion()">Push Question</button>
+        <button class="full-btn success" onclick="addNewQuestion()">Push Single Question</button>
       </div>
 
       <div class="section">
         <h2>Current Questions</h2>
         <button onclick="loadQuestions()">Refresh Questions</button>
-
         <table>
           <thead>
             <tr>
@@ -216,26 +113,12 @@
 
       <div class="section">
         <h2>Submitted Results</h2>
-
         <button onclick="loadResults()">Refresh Results</button>
-
         <div class="summary">
-          <div class="card">
-            Total Submissions
-            <strong id="totalSubmissions">0</strong>
-          </div>
-
-          <div class="card">
-            Highest Score
-            <strong id="highestScore">0/0</strong>
-          </div>
-
-          <div class="card">
-            Average Score
-            <strong id="averageScore">0%</strong>
-          </div>
+          <div class="card">Total Submissions<strong id="totalSubmissions">0</strong></div>
+          <div class="card">Highest Score<strong id="highestScore">0/0</strong></div>
+          <div class="card">Average Score<strong id="averageScore">0%</strong></div>
         </div>
-
         <table>
           <thead>
             <tr>
@@ -249,22 +132,13 @@
           <tbody id="resultsTable"></tbody>
         </table>
       </div>
-
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      orderBy,
-      doc,
-      updateDoc,
-      serverTimestamp
+      getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, writeBatch, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -279,22 +153,158 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     const ADMIN_PASSWORD = "valentine123";
+    let parsedUploadQuestions = [];
 
     window.loginAdmin = function() {
       const password = document.getElementById("adminPassword").value;
-
       if (password !== ADMIN_PASSWORD) {
         alert("Wrong admin password");
         return;
       }
-
       document.getElementById("loginBox").style.display = "none";
       document.getElementById("dashboardBox").style.display = "block";
-
       loadQuestions();
       loadResults();
+    }
+
+    function normalizeHeader(text) {
+      return String(text || "").trim().toLowerCase().replace(/\s+/g, " ");
+    }
+
+    function getValue(row, possibleHeaders) {
+      const keys = Object.keys(row);
+      for (const wanted of possibleHeaders) {
+        const found = keys.find(k => normalizeHeader(k) === normalizeHeader(wanted));
+        if (found) return row[found];
+      }
+      return "";
+    }
+
+    async function parseQuestionFile() {
+      const fileInput = document.getElementById("questionFile");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please choose a question file first.");
+        return [];
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheetName = workbook.SheetNames.includes("Questions") ? "Questions" : workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      const questions = rows.map((row, index) => {
+        const question = String(getValue(row, ["Question", "q"])).trim();
+        const optionA = String(getValue(row, ["A", "Option A"])).trim();
+        const optionB = String(getValue(row, ["B", "Option B"])).trim();
+        const optionC = String(getValue(row, ["C", "Option C"])).trim();
+        const optionD = String(getValue(row, ["D", "Option D"])).trim();
+        const answer = String(getValue(row, ["Correct Answer", "Answer"])).trim().toUpperCase();
+
+        return {
+          rowNumber: index + 2,
+          q: question,
+          options: [optionA, optionB, optionC, optionD],
+          answer: answer
+        };
+      }).filter(item => item.q || item.options.some(Boolean) || item.answer);
+
+      for (const item of questions) {
+        if (!item.q || item.options.some(opt => !opt) || !["A", "B", "C", "D"].includes(item.answer)) {
+          throw new Error(`Invalid row ${item.rowNumber}. Check Question, A, B, C, D, and Correct Answer.`);
+        }
+      }
+
+      return questions;
+    }
+
+    window.previewQuestionFile = async function() {
+      try {
+        parsedUploadQuestions = await parseQuestionFile();
+        document.getElementById("uploadPreview").innerText = `${parsedUploadQuestions.length} valid questions found.`;
+
+        const table = document.getElementById("uploadPreviewTable");
+        table.innerHTML = "";
+
+        parsedUploadQuestions.slice(0, 10).forEach((item, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${escapeHtml(item.q)}</td>
+            <td>${escapeHtml(item.options[0])}</td>
+            <td>${escapeHtml(item.options[1])}</td>
+            <td>${escapeHtml(item.options[2])}</td>
+            <td>${escapeHtml(item.options[3])}</td>
+            <td>${item.answer}</td>
+          `;
+          table.appendChild(row);
+        });
+
+      } catch (error) {
+        alert(error.message);
+        console.error(error);
+      }
+    }
+
+    window.uploadQuestionFile = async function() {
+      try {
+        parsedUploadQuestions = await parseQuestionFile();
+
+        if (parsedUploadQuestions.length === 0) {
+          alert("No valid questions found.");
+          return;
+        }
+
+        const proceed = confirm(`This will disable old active questions and upload ${parsedUploadQuestions.length} new questions. Continue?`);
+        if (!proceed) return;
+
+        const oldSnapshot = await getDocs(collection(db, "quizQuestions"));
+        let batch = writeBatch(db);
+        let batchCount = 0;
+
+        oldSnapshot.forEach((docSnap) => {
+          const ref = doc(db, "quizQuestions", docSnap.id);
+          batch.update(ref, { active: false });
+          batchCount++;
+        });
+
+        for (const item of parsedUploadQuestions) {
+          const ref = doc(collection(db, "quizQuestions"));
+          batch.set(ref, {
+            q: item.q,
+            options: item.options,
+            answer: item.answer,
+            active: true,
+            createdAt: serverTimestamp()
+          });
+          batchCount++;
+
+          if (batchCount >= 450) {
+            await batch.commit();
+            batch = writeBatch(db);
+            batchCount = 0;
+          }
+        }
+
+        if (batchCount > 0) {
+          await batch.commit();
+        }
+
+        alert("Questions uploaded successfully.");
+        document.getElementById("questionFile").value = "";
+        document.getElementById("uploadPreview").innerText = "";
+        document.getElementById("uploadPreviewTable").innerHTML = "";
+        parsedUploadQuestions = [];
+
+        loadQuestions();
+
+      } catch (error) {
+        alert(error.message || "Upload failed.");
+        console.error(error);
+      }
     }
 
     window.addNewQuestion = async function() {
@@ -325,14 +335,12 @@
         });
 
         alert("Question pushed successfully.");
-
         document.getElementById("newQuestion").value = "";
         document.getElementById("optionA").value = "";
         document.getElementById("optionB").value = "";
         document.getElementById("optionC").value = "";
         document.getElementById("optionD").value = "";
         document.getElementById("correctAnswer").value = "";
-
         loadQuestions();
 
       } catch (error) {
@@ -348,39 +356,33 @@
       try {
         const q = query(collection(db, "quizQuestions"), orderBy("createdAt", "asc"));
         const snapshot = await getDocs(q);
-
         let count = 0;
 
         snapshot.forEach((docSnap) => {
           count++;
-
           const data = docSnap.data();
           const id = docSnap.id;
-
           const optionsText = `
-A. ${data.options[0]}<br>
-B. ${data.options[1]}<br>
-C. ${data.options[2]}<br>
-D. ${data.options[3]}
+A. ${escapeHtml(data.options?.[0] || "")}<br>
+B. ${escapeHtml(data.options?.[1] || "")}<br>
+C. ${escapeHtml(data.options?.[2] || "")}<br>
+D. ${escapeHtml(data.options?.[3] || "")}
           `;
 
           const row = document.createElement("tr");
-
           row.innerHTML = `
             <td>${count}</td>
-            <td>${data.q}</td>
+            <td>${escapeHtml(data.q)}</td>
             <td>${optionsText}</td>
             <td>${data.answer}</td>
             <td>${data.active ? "Active" : "Inactive"}</td>
             <td>
-              ${
-                data.active
+              ${data.active
                 ? `<button class="danger" onclick="toggleQuestion('${id}', false)">Disable</button>`
                 : `<button class="success" onclick="toggleQuestion('${id}', true)">Enable</button>`
               }
             </td>
           `;
-
           table.appendChild(row);
         });
 
@@ -392,13 +394,9 @@ D. ${data.options[3]}
 
     window.toggleQuestion = async function(questionId, status) {
       try {
-        await updateDoc(doc(db, "quizQuestions", questionId), {
-          active: status
-        });
-
+        await updateDoc(doc(db, "quizQuestions", questionId), { active: status });
         alert(status ? "Question enabled." : "Question disabled.");
         loadQuestions();
-
       } catch (error) {
         alert("Could not update question.");
         console.error(error);
@@ -420,9 +418,7 @@ D. ${data.options[3]}
 
         querySnapshot.forEach((docSnap) => {
           const data = docSnap.data();
-
           totalSubmissions++;
-
           const percentage = Math.round((data.score / data.total) * 100);
           totalPercentage += percentage;
 
@@ -432,25 +428,23 @@ D. ${data.options[3]}
           }
 
           const date = data.submittedAt ? data.submittedAt.toDate().toLocaleString() : "Pending";
-
           let details = "";
 
           if (data.answers) {
             data.answers.forEach(ans => {
-              details += `Question ${ans.questionNumber}: Selected ${ans.selected} | Correct ${ans.correct} | ${ans.isCorrect ? "Correct" : "Wrong"}\n`;
+              details += `Question ${ans.questionNumber}: ${ans.question}\nSelected: ${ans.selected}. ${ans.selectedText || ""}\nCorrect: ${ans.correct}. ${ans.correctText || ""}\nStatus: ${ans.isCorrect ? "Correct" : "Wrong"}\n\n`;
             });
           }
 
           const row = document.createElement("tr");
-
           row.innerHTML = `
-            <td>${data.name}</td>
+            <td>${escapeHtml(data.name)}</td>
             <td class="score ${percentage >= 50 ? "pass" : "fail"}">${data.score}/${data.total}</td>
             <td>${percentage}%</td>
             <td>${date}</td>
             <td>
               <button onclick="toggleDetails(this)">View</button>
-              <div class="details">${details}</div>
+              <div class="details">${escapeHtml(details)}</div>
             </td>
           `;
 
@@ -458,7 +452,6 @@ D. ${data.options[3]}
         });
 
         const average = totalSubmissions > 0 ? Math.round(totalPercentage / totalSubmissions) : 0;
-
         document.getElementById("totalSubmissions").innerText = totalSubmissions;
         document.getElementById("highestScore").innerText = highestScore + "/" + highestTotal;
         document.getElementById("averageScore").innerText = average + "%";
@@ -473,7 +466,15 @@ D. ${data.options[3]}
       const details = button.nextElementSibling;
       details.style.display = details.style.display === "block" ? "none" : "block";
     }
-  </script>
 
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
 </body>
 </html>
