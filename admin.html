@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+      color: #111;
+    }
+
+    .container {
+      max-width: 1150px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 10px 15px;
+      background: #111827;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 4px 0;
+    }
+
+    button:hover {
+      background: #000;
+    }
+
+    .login-btn, .full-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+    }
+
+    #dashboardBox {
+      display: none;
+      margin-top: 25px;
+    }
+
+    .section {
+      border: 1px solid #ddd;
+      background: #fafafa;
+      padding: 18px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+    }
+
+    .summary {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      flex: 1;
+      min-width: 180px;
+      background: #f9fafb;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .card strong {
+      font-size: 24px;
+      display: block;
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #111827;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    .score {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .pass {
+      color: green;
+    }
+
+    .fail {
+      color: red;
+    }
+
+    .details {
+      white-space: pre-wrap;
+      font-size: 13px;
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .danger {
+      background: #b91c1c;
+    }
+
+    .danger:hover {
+      background: #7f1d1d;
+    }
+
+    .success {
+      background: #166534;
+    }
+
+    .success:hover {
+      background: #14532d;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>Quiz Admin Dashboard</h1>
+    <h2>Economics: Public Finance</h2>
+
+    <div id="loginBox">
+      <input type="password" id="adminPassword" placeholder="Enter admin password">
+      <button class="login-btn" onclick="loginAdmin()">Open Dashboard</button>
+    </div>
+
+    <div id="dashboardBox">
+
+      <div class="section">
+        <h2>Add / Push New Question</h2>
+
+        <textarea id="newQuestion" placeholder="Enter question"></textarea>
+
+        <input type="text" id="optionA" placeholder="Option A">
+        <input type="text" id="optionB" placeholder="Option B">
+        <input type="text" id="optionC" placeholder="Option C">
+        <input type="text" id="optionD" placeholder="Option D">
+
+        <select id="correctAnswer">
+          <option value="">Select correct answer</option>
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+        </select>
+
+        <button class="full-btn success" onclick="addNewQuestion()">Push Question</button>
+      </div>
+
+      <div class="section">
+        <h2>Current Questions</h2>
+        <button onclick="loadQuestions()">Refresh Questions</button>
+
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Question</th>
+              <th>Options</th>
+              <th>Answer</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="questionsTable"></tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Submitted Results</h2>
+
+        <button onclick="loadResults()">Refresh Results</button>
+
+        <div class="summary">
+          <div class="card">
+            Total Submissions
+            <strong id="totalSubmissions">0</strong>
+          </div>
+
+          <div class="card">
+            Highest Score
+            <strong id="highestScore">0/0</strong>
+          </div>
+
+          <div class="card">
+            Average Score
+            <strong id="averageScore">0%</strong>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>Score</th>
+              <th>Percentage</th>
+              <th>Date Submitted</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTable"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      orderBy,
+      doc,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCgdl-oI3jrvTarOOzEqd791ZhE_CGBv6A",
+      authDomain: "public-finance-quiz.firebaseapp.com",
+      projectId: "public-finance-quiz",
+      storageBucket: "public-finance-quiz.firebasestorage.app",
+      messagingSenderId: "350473490107",
+      appId: "1:350473490107:web:2f7275513a2d8cbad7e39e",
+      measurementId: "G-CSJ828BPGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const ADMIN_PASSWORD = "valentine123";
+
+    window.loginAdmin = function() {
+      const password = document.getElementById("adminPassword").value;
+
+      if (password !== ADMIN_PASSWORD) {
+        alert("Wrong admin password");
+        return;
+      }
+
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("dashboardBox").style.display = "block";
+
+      loadQuestions();
+      loadResults();
+    }
+
+    window.addNewQuestion = async function() {
+      const question = document.getElementById("newQuestion").value.trim();
+      const optionA = document.getElementById("optionA").value.trim();
+      const optionB = document.getElementById("optionB").value.trim();
+      const optionC = document.getElementById("optionC").value.trim();
+      const optionD = document.getElementById("optionD").value.trim();
+      const correctAnswer = document.getElementById("correctAnswer").value.trim().toUpperCase();
+
+      if (!question || !optionA || !optionB || !optionC || !optionD || !correctAnswer) {
+        alert("Please fill all fields.");
+        return;
+      }
+
+      if (!["A", "B", "C", "D"].includes(correctAnswer)) {
+        alert("Correct answer must be A, B, C, or D.");
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "quizQuestions"), {
+          q: question,
+          options: [optionA, optionB, optionC, optionD],
+          answer: correctAnswer,
+          active: true,
+          createdAt: serverTimestamp()
+        });
+
+        alert("Question pushed successfully.");
+
+        document.getElementById("newQuestion").value = "";
+        document.getElementById("optionA").value = "";
+        document.getElementById("optionB").value = "";
+        document.getElementById("optionC").value = "";
+        document.getElementById("optionD").value = "";
+        document.getElementById("correctAnswer").value = "";
+
+        loadQuestions();
+
+      } catch (error) {
+        alert("Question could not be pushed.");
+        console.error(error);
+      }
+    }
+
+    window.loadQuestions = async function() {
+      const table = document.getElementById("questionsTable");
+      table.innerHTML = "";
+
+      try {
+        const q = query(collection(db, "quizQuestions"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+
+        let count = 0;
+
+        snapshot.forEach((docSnap) => {
+          count++;
+
+          const data = docSnap.data();
+          const id = docSnap.id;
+
+          const optionsText = `
+A. ${data.options[0]}<br>
+B. ${data.options[1]}<br>
+C. ${data.options[2]}<br>
+D. ${data.options[3]}
+          `;
+
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${count}</td>
+            <td>${data.q}</td>
+            <td>${optionsText}</td>
+            <td>${data.answer}</td>
+            <td>${data.active ? "Active" : "Inactive"}</td>
+            <td>
+              ${
+                data.active
+                ? `<button class="danger" onclick="toggleQuestion('${id}', false)">Disable</button>`
+                : `<button class="success" onclick="toggleQuestion('${id}', true)">Enable</button>`
+              }
+            </td>
+          `;
+
+          table.appendChild(row);
+        });
+
+      } catch (error) {
+        alert("Could not load questions.");
+        console.error(error);
+      }
+    }
+
+    window.toggleQuestion = async function(questionId, status) {
+      try {
+        await updateDoc(doc(db, "quizQuestions", questionId), {
+          active: status
+        });
+
+        alert(status ? "Question enabled." : "Question disabled.");
+        loadQuestions();
+
+      } catch (error) {
+        alert("Could not update question.");
+        console.error(error);
+      }
+    }
+
+    window.loadResults = async function() {
+      const table = document.getElementById("resultsTable");
+      table.innerHTML = "";
+
+      let totalSubmissions = 0;
+      let highestScore = 0;
+      let highestTotal = 0;
+      let totalPercentage = 0;
+
+      try {
+        const q = query(collection(db, "quizResults"), orderBy("submittedAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+
+          totalSubmissions++;
+
+          const percentage = Math.round((data.score / data.total) * 100);
+          totalPercentage += percentage;
+
+          if (data.score > highestScore) {
+            highestScore = data.score;
+            highestTotal = data.total;
+          }
+
+          const date = data.submittedAt ? data.submittedAt.toDate().toLocaleString() : "Pending";
+
+          let details = "";
+
+          if (data.answers) {
+            data.answers.forEach(ans => {
+              details += `Question ${ans.questionNumber}: Selected ${ans.selected} | Correct ${ans.correct} | ${ans.isCorrect ? "Correct" : "Wrong"}\n`;
+            });
+          }
+
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+            <td>${data.name}</td>
+            <td class="score ${percentage >= 50 ? "pass" : "fail"}">${data.score}/${data.total}</td>
+            <td>${percentage}%</td>
+            <td>${date}</td>
+            <td>
+              <button onclick="toggleDetails(this)">View</button>
+              <div class="details">${details}</div>
+            </td>
+          `;
+
+          table.appendChild(row);
+        });
+
+        const average = totalSubmissions > 0 ? Math.round(totalPercentage / totalSubmissions) : 0;
+
+        document.getElementById("totalSubmissions").innerText = totalSubmissions;
+        document.getElementById("highestScore").innerText = highestScore + "/" + highestTotal;
+        document.getElementById("averageScore").innerText = average + "%";
+
+      } catch (error) {
+        alert("Could not load results.");
+        console.error(error);
+      }
+    }
+
+    window.toggleDetails = function(button) {
+      const details = button.nextElementSibling;
+      details.style.display = details.style.display === "block" ? "none" : "block";
+    }
+  </script>
+
+</body>
+</html>

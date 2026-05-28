@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Economics Quiz - Public Finance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #111;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .warning {
+      background: #fff3cd;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .question {
+      margin-bottom: 25px;
+      padding: 18px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #fafafa;
+    }
+
+    .question h3 {
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+      padding: 10px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      line-height: 1.5;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background: #111827;
+      color: white;
+      font-size: 17px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    button:hover {
+      background: #000;
+    }
+
+    #quizBox, #resultBox {
+      display: none;
+    }
+
+    .score {
+      font-size: 44px;
+      font-weight: bold;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .locked {
+      display: none;
+      text-align: center;
+      padding: 50px;
+      color: red;
+      font-weight: bold;
+      font-size: 20px;
+    }
+  </style>
+</head>
+
+<body oncontextmenu="return false">
+
+  <div class="container" id="startBox">
+    <h1>Economics Quiz</h1>
+    <h2>Topic: Public Finance</h2>
+
+    <div class="warning">
+      This quiz must be taken in full-screen mode. Copying, right-clicking, printing, inspecting, and leaving the page are not allowed.
+      Your score will show immediately after submission.
+    </div>
+
+    <input type="text" id="studentName" placeholder="Enter your full name">
+    <button onclick="startQuiz()">Start Quiz</button>
+  </div>
+
+  <div class="container" id="quizBox">
+    <h1>Economics Quiz</h1>
+    <h2>Public Finance</h2>
+    <p><strong>Instruction:</strong> Choose the correct option. You can submit only once.</p>
+
+    <form id="quizForm"></form>
+    <button type="button" onclick="submitQuiz()">Submit Quiz</button>
+  </div>
+
+  <div class="container" id="resultBox">
+    <h1>Quiz Submitted</h1>
+    <p id="studentResult" style="text-align:center;"></p>
+    <div class="score" id="scoreText"></div>
+    <p style="text-align:center;">Your score has been recorded.</p>
+  </div>
+
+  <div class="locked" id="lockedBox">
+    Quiz locked because you left the page or attempted a restricted action.
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      query,
+      where,
+      orderBy,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCgdl-oI3jrvTarOOzEqd791ZhE_CGBv6A",
+      authDomain: "public-finance-quiz.firebaseapp.com",
+      projectId: "public-finance-quiz",
+      storageBucket: "public-finance-quiz.firebasestorage.app",
+      messagingSenderId: "350473490107",
+      appId: "1:350473490107:web:2f7275513a2d8cbad7e39e",
+      measurementId: "G-CSJ828BPGZ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let studentName = "";
+    let locked = false;
+    let questions = [];
+
+    async function fetchQuestions() {
+      try {
+        const q = query(
+          collection(db, "quizQuestions"),
+          where("active", "==", true),
+          orderBy("createdAt", "asc")
+        );
+
+        const snapshot = await getDocs(q);
+
+        questions = snapshot.docs.map(doc => {
+          return {
+            id: doc.id,
+            ...doc.data()
+          };
+        });
+
+        if (questions.length === 0) {
+          alert("No questions available yet. Contact the teacher.");
+          return false;
+        }
+
+        return true;
+
+      } catch (error) {
+        console.error(error);
+        alert("Questions could not be loaded. Check Firebase or internet connection.");
+        return false;
+      }
+    }
+
+    window.startQuiz = async function() {
+      studentName = document.getElementById("studentName").value.trim();
+
+      if (studentName === "") {
+        alert("Please enter your full name.");
+        return;
+      }
+
+      if (localStorage.getItem("publicFinanceQuizSubmitted") === "yes") {
+        alert("You have already submitted this quiz on this device.");
+        return;
+      }
+
+      document.documentElement.requestFullscreen().catch(() => {
+        alert("Please allow full-screen mode to continue.");
+      });
+
+      const loaded = await fetchQuestions();
+
+      if (!loaded) {
+        return;
+      }
+
+      document.getElementById("startBox").style.display = "none";
+      document.getElementById("quizBox").style.display = "block";
+
+      loadQuiz();
+    }
+
+    function loadQuiz() {
+      const form = document.getElementById("quizForm");
+      form.innerHTML = "";
+
+      questions.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "question";
+
+        div.innerHTML = `
+          <h3>${index + 1}. ${item.q}</h3>
+          <label><input type="radio" name="q${index}" value="A"> A. ${item.options[0]}</label>
+          <label><input type="radio" name="q${index}" value="B"> B. ${item.options[1]}</label>
+          <label><input type="radio" name="q${index}" value="C"> C. ${item.options[2]}</label>
+          <label><input type="radio" name="q${index}" value="D"> D. ${item.options[3]}</label>
+        `;
+
+        form.appendChild(div);
+      });
+    }
+
+    window.submitQuiz = async function() {
+      if (locked) return;
+
+      let score = 0;
+      let answers = [];
+
+      for (let i = 0; i < questions.length; i++) {
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+
+        if (!selected) {
+          alert("Please answer all questions before submitting.");
+          return;
+        }
+
+        answers.push({
+          questionNumber: i + 1,
+          question: questions[i].q,
+          selected: selected.value,
+          correct: questions[i].answer,
+          isCorrect: selected.value === questions[i].answer
+        });
+
+        if (selected.value === questions[i].answer) {
+          score++;
+        }
+      }
+
+      try {
+        await addDoc(collection(db, "quizResults"), {
+          name: studentName,
+          score: score,
+          total: questions.length,
+          answers: answers,
+          submittedAt: serverTimestamp()
+        });
+
+        localStorage.setItem("publicFinanceQuizSubmitted", "yes");
+
+        document.getElementById("quizBox").style.display = "none";
+        document.getElementById("resultBox").style.display = "block";
+
+        document.getElementById("studentResult").innerText = "Student: " + studentName;
+        document.getElementById("scoreText").innerText = score + "/" + questions.length;
+
+      } catch (error) {
+        alert("Result could not be saved. Check internet or Firebase setup.");
+        console.error(error);
+      }
+    }
+
+    function lockQuiz() {
+      if (document.getElementById("quizBox").style.display === "block") {
+        locked = true;
+        document.getElementById("quizBox").style.display = "none";
+        document.getElementById("lockedBox").style.display = "block";
+      }
+    }
+
+    document.addEventListener("copy", e => e.preventDefault());
+    document.addEventListener("cut", e => e.preventDefault());
+    document.addEventListener("paste", e => e.preventDefault());
+
+    document.addEventListener("selectstart", function(e) {
+      if (e.target.id !== "studentName") e.preventDefault();
+    });
+
+    document.addEventListener("keydown", function(e) {
+      const key = e.key.toLowerCase();
+
+      if (
+        (e.ctrlKey && ["c", "x", "v", "s", "p", "u", "a"].includes(key)) ||
+        (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) ||
+        e.key === "PrintScreen" ||
+        e.key === "F12"
+      ) {
+        e.preventDefault();
+        alert("This action is not allowed.");
+        lockQuiz();
+      }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) lockQuiz();
+    });
+
+    window.addEventListener("blur", function() {
+      lockQuiz();
+    });
+
+    window.addEventListener("beforeprint", function() {
+      lockQuiz();
+    });
+  </script>
+
+</body>
+</html>
