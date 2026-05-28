@@ -4,125 +4,37 @@
   <meta charset="UTF-8">
   <title>Economics Quiz - Public Finance</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      color: #111;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 30px auto;
-      background: white;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-
-    h1, h2 {
-      text-align: center;
-    }
-
-    .warning {
-      background: #fff3cd;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-
-    .question {
-      margin-bottom: 25px;
-      padding: 18px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      background: #fafafa;
-    }
-
-    .question h3 {
-      line-height: 1.5;
-    }
-
-    label {
-      display: block;
-      margin: 10px 0;
-      padding: 10px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      cursor: pointer;
-      line-height: 1.5;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 14px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      user-select: text;
-      -webkit-user-select: text;
-    }
-
-    button {
-      width: 100%;
-      padding: 15px;
-      background: #111827;
-      color: white;
-      font-size: 17px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
-
-    button:hover {
-      background: #000;
-    }
-
-    #quizBox, #resultBox {
-      display: none;
-    }
-
-    .score {
-      font-size: 44px;
-      font-weight: bold;
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    .locked {
-      display: none;
-      text-align: center;
-      padding: 50px;
-      color: red;
-      font-weight: bold;
-      font-size: 20px;
-    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #111; }
+    .container { max-width: 930px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    h1, h2 { text-align: center; }
+    .warning { background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 20px; line-height: 1.6; }
+    .question { margin-bottom: 25px; padding: 18px; border: 1px solid #ddd; border-radius: 10px; background: #fafafa; }
+    .question h3 { line-height: 1.5; }
+    label { display: block; margin: 10px 0; padding: 10px; background: white; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; line-height: 1.5; }
+    input[type="text"] { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; user-select: text; -webkit-user-select: text; }
+    button { width: 100%; padding: 15px; background: #111827; color: white; font-size: 17px; border: none; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+    button:hover { background: #000; }
+    #quizBox, #resultBox { display: none; }
+    .score { font-size: 44px; font-weight: bold; text-align: center; margin: 20px 0; }
+    .locked { display: none; text-align: center; padding: 50px; color: red; font-weight: bold; font-size: 20px; }
+    .review-box { margin-top: 25px; padding: 18px; border-radius: 10px; background: #f9fafb; border: 1px solid #ddd; }
+    .wrong-item { margin: 14px 0; padding: 14px; border-left: 5px solid #b91c1c; background: #fff; border-radius: 8px; line-height: 1.6; }
+    .correct { color: #166534; font-weight: bold; }
+    .wrong { color: #b91c1c; font-weight: bold; }
+    .muted { color: #555; font-size: 14px; }
   </style>
 </head>
 
 <body oncontextmenu="return false">
-
   <div class="container" id="startBox">
     <h1>Economics Quiz</h1>
     <h2>Topic: Public Finance</h2>
-
     <div class="warning">
       This quiz must be taken in full-screen mode. Copying, right-clicking, printing, inspecting, and leaving the page are not allowed.
-      Your score will show immediately after submission.
+      Your score will show immediately after submission. Wrong answers will show correction after submission.
     </div>
-
     <input type="text" id="studentName" placeholder="Enter your full name">
     <button onclick="startQuiz()">Start Quiz</button>
   </div>
@@ -131,7 +43,6 @@
     <h1>Economics Quiz</h1>
     <h2>Public Finance</h2>
     <p><strong>Instruction:</strong> Choose the correct option. You can submit only once.</p>
-
     <form id="quizForm"></form>
     <button type="button" onclick="submitQuiz()">Submit Quiz</button>
   </div>
@@ -141,6 +52,7 @@
     <p id="studentResult" style="text-align:center;"></p>
     <div class="score" id="scoreText"></div>
     <p style="text-align:center;">Your score has been recorded.</p>
+    <div class="review-box" id="reviewBox"></div>
   </div>
 
   <div class="locked" id="lockedBox">
@@ -150,14 +62,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      query,
-      where,
-      orderBy,
-      serverTimestamp
+      getFirestore, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -177,22 +82,19 @@
     let locked = false;
     let questions = [];
 
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
     async function fetchQuestions() {
       try {
-        const q = query(
-          collection(db, "quizQuestions"),
-          where("active", "==", true),
-          orderBy("createdAt", "asc")
-        );
-
+        const q = query(collection(db, "quizQuestions"), where("active", "==", true), orderBy("createdAt", "asc"));
         const snapshot = await getDocs(q);
-
-        questions = snapshot.docs.map(doc => {
-          return {
-            id: doc.id,
-            ...doc.data()
-          };
-        });
+        questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         if (questions.length === 0) {
           alert("No questions available yet. Contact the teacher.");
@@ -200,7 +102,6 @@
         }
 
         return true;
-
       } catch (error) {
         console.error(error);
         alert("Questions could not be loaded. Check Firebase or internet connection.");
@@ -226,10 +127,9 @@
       });
 
       const loaded = await fetchQuestions();
+      if (!loaded) return;
 
-      if (!loaded) {
-        return;
-      }
+      questions = shuffleArray(questions);
 
       document.getElementById("startBox").style.display = "none";
       document.getElementById("quizBox").style.display = "block";
@@ -244,15 +144,13 @@
       questions.forEach((item, index) => {
         const div = document.createElement("div");
         div.className = "question";
-
         div.innerHTML = `
-          <h3>${index + 1}. ${item.q}</h3>
-          <label><input type="radio" name="q${index}" value="A"> A. ${item.options[0]}</label>
-          <label><input type="radio" name="q${index}" value="B"> B. ${item.options[1]}</label>
-          <label><input type="radio" name="q${index}" value="C"> C. ${item.options[2]}</label>
-          <label><input type="radio" name="q${index}" value="D"> D. ${item.options[3]}</label>
+          <h3>${index + 1}. ${escapeHtml(item.q)}</h3>
+          <label><input type="radio" name="q${index}" value="A"> A. ${escapeHtml(item.options[0])}</label>
+          <label><input type="radio" name="q${index}" value="B"> B. ${escapeHtml(item.options[1])}</label>
+          <label><input type="radio" name="q${index}" value="C"> C. ${escapeHtml(item.options[2])}</label>
+          <label><input type="radio" name="q${index}" value="D"> D. ${escapeHtml(item.options[3])}</label>
         `;
-
         form.appendChild(div);
       });
     }
@@ -262,6 +160,7 @@
 
       let score = 0;
       let answers = [];
+      let wrongAnswers = [];
 
       for (let i = 0; i < questions.length; i++) {
         const selected = document.querySelector(`input[name="q${i}"]:checked`);
@@ -271,17 +170,24 @@
           return;
         }
 
-        answers.push({
+        const isCorrect = selected.value === questions[i].answer;
+        if (isCorrect) score++;
+
+        const correctIndex = letterToIndex(questions[i].answer);
+        const selectedIndex = letterToIndex(selected.value);
+
+        const answerRecord = {
           questionNumber: i + 1,
           question: questions[i].q,
           selected: selected.value,
+          selectedText: questions[i].options[selectedIndex],
           correct: questions[i].answer,
-          isCorrect: selected.value === questions[i].answer
-        });
+          correctText: questions[i].options[correctIndex],
+          isCorrect: isCorrect
+        };
 
-        if (selected.value === questions[i].answer) {
-          score++;
-        }
+        answers.push(answerRecord);
+        if (!isCorrect) wrongAnswers.push(answerRecord);
       }
 
       try {
@@ -297,14 +203,51 @@
 
         document.getElementById("quizBox").style.display = "none";
         document.getElementById("resultBox").style.display = "block";
-
         document.getElementById("studentResult").innerText = "Student: " + studentName;
         document.getElementById("scoreText").innerText = score + "/" + questions.length;
+
+        showReview(wrongAnswers);
 
       } catch (error) {
         alert("Result could not be saved. Check internet or Firebase setup.");
         console.error(error);
       }
+    }
+
+    function showReview(wrongAnswers) {
+      const reviewBox = document.getElementById("reviewBox");
+
+      if (wrongAnswers.length === 0) {
+        reviewBox.innerHTML = `<h2>Correction</h2><p class="correct">Excellent. You did not miss any question.</p>`;
+        return;
+      }
+
+      let html = `<h2>Correction for Wrong Answers</h2><p class="muted">Only the questions you failed are shown below.</p>`;
+
+      wrongAnswers.forEach(item => {
+        html += `
+          <div class="wrong-item">
+            <strong>Question ${item.questionNumber}:</strong> ${escapeHtml(item.question)}<br>
+            <span class="wrong">Your answer:</span> ${item.selected}. ${escapeHtml(item.selectedText)}<br>
+            <span class="correct">Correct answer:</span> ${item.correct}. ${escapeHtml(item.correctText)}
+          </div>
+        `;
+      });
+
+      reviewBox.innerHTML = html;
+    }
+
+    function letterToIndex(letter) {
+      return { A: 0, B: 1, C: 2, D: 3 }[String(letter).trim().toUpperCase()];
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     function lockQuiz() {
@@ -325,7 +268,6 @@
 
     document.addEventListener("keydown", function(e) {
       const key = e.key.toLowerCase();
-
       if (
         (e.ctrlKey && ["c", "x", "v", "s", "p", "u", "a"].includes(key)) ||
         (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) ||
@@ -342,14 +284,8 @@
       if (document.hidden) lockQuiz();
     });
 
-    window.addEventListener("blur", function() {
-      lockQuiz();
-    });
-
-    window.addEventListener("beforeprint", function() {
-      lockQuiz();
-    });
+    window.addEventListener("blur", function() { lockQuiz(); });
+    window.addEventListener("beforeprint", function() { lockQuiz(); });
   </script>
-
 </body>
 </html>
