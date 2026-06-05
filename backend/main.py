@@ -1,7 +1,6 @@
 import os
 import json
 import uuid
-import time
 from datetime import datetime
 from typing import Optional
 
@@ -14,10 +13,8 @@ from openpyxl import load_workbook
 
 ADMIN_TOKEN = os.getenv("EDUCBT_ADMIN_TOKEN", "change-this-token")
 ALLOWED_ORIGINS = [x.strip() for x in os.getenv("EDUCBT_ALLOWED_ORIGINS", "*").split(",") if x.strip()]
-BATCH_SIZE = int(os.getenv("EDUCBT_IMPORT_BATCH_SIZE", "100"))
-BATCH_DELAY = float(os.getenv("EDUCBT_IMPORT_BATCH_DELAY", "1.2"))
 
-app = FastAPI(title="EduCBT Backend", version="1.2.0")
+app = FastAPI(title="EduCBT Backend", version="1.3.0")
 app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_credentials=False, allow_methods=["*"], allow_headers=["*"])
 JOBS = {}
 
@@ -58,10 +55,9 @@ def get_value(row, headers, names):
     return ""
 
 
-def commit_batch(batch, sleep_after=True):
-    batch.commit()
-    if sleep_after and BATCH_DELAY > 0:
-        time.sleep(BATCH_DELAY)
+def safe_doc_id(class_level: str, subject: str):
+    clean_subject = subject.replace("/", "-").replace(" ", "_")
+    return f"{class_level or 'GENERAL'}__{clean_subject}"
 
 
 class Settings(BaseModel):
@@ -111,7 +107,8 @@ def import_worker(job_id: str, temp_path: str, target_class: str, mode: str):
         if not rows:
             raise ValueError("Empty Excel file")
         headers = [str(x or "").strip() for x in rows[0]]
-        parsed = []
+        grouped = {}
+        total = 0
         for row_number, row in enumerate(rows[1:], start=2):
             subject = str(get_value(row, headers, ["Subject"]) or "").strip()
             if mode != "ALL" and not subject:
@@ -139,38 +136,35 @@ def import_worker(job_id: str, temp_path: str, target_class: str, mode: str):
                 raise ValueError(f"Missing question/options on row {row_number}")
             if answer not in VALID_ANSWERS:
                 raise ValueError(f"Invalid answer on row {row_number}: {answer}")
-            parsed.append({"classLevel": class_level, "subject": subject, "q": question, "options": options, "answer": answer, "active": True, "createdAt": firestore.SERVER_TIMESTAMP})
-        if not parsed:
+            key = (class_level, subject)
+            grouped.setdefault(key, []).append({"q": question, "options": options, "answer": answer})
+            total += 1
+        if not total:
             raise ValueError("No valid questions found")
 
         db = init_firebase()
-        pairs = {(item["classLevel"], item["subject"]) for item in parsed}
-        JOBS[job_id].update({"total": len(parsed), "groups": len(pairs), "message": "Deactivating old matching questions", "batchSize": BATCH_SIZE})
-
-        batch = db.batch(); ops = 0; deactivated = 0
-        for doc in db.collection("quizQuestions").stream():
-            data = doc.to_dict()
-            pair = (str(data.get("classLevel", "")).upper(), data.get("subject", ""))
-            if pair in pairs:
-                batch.update(doc.reference, {"active": False})
-                ops += 1; deactivated += 1
-                if ops >= BATCH_SIZE:
-                    commit_batch(batch); batch = db.batch(); ops = 0
-                    JOBS[job_id].update({"deactivated": deactivated, "message": f"Deactivated {deactivated} old questions"})
-        if ops:
-            commit_batch(batch); batch = db.batch(); ops = 0
-
+        JOBS[job_id].update({"total": total, "groups": len(grouped), "message": "Saving grouped question banks"})
+        batch = db.batch()
+        ops = 0
         imported = 0
-        JOBS[job_id].update({"message": "Importing new questions slowly to avoid quota limit", "deactivated": deactivated})
-        for item in parsed:
-            batch.set(db.collection("quizQuestions").document(), item)
-            ops += 1; imported += 1
-            if ops >= BATCH_SIZE:
-                commit_batch(batch); batch = db.batch(); ops = 0
-                JOBS[job_id].update({"imported": imported, "message": f"Imported {imported}/{len(parsed)} questions"})
+        for (class_level, subject), questions in grouped.items():
+            ref = db.collection("questionBanks").document(safe_doc_id(class_level, subject))
+            batch.set(ref, {
+                "classLevel": class_level,
+                "subject": subject,
+                "questions": questions,
+                "count": len(questions),
+                "active": True,
+                "updatedAt": firestore.SERVER_TIMESTAMP,
+            })
+            ops += 1
+            imported += len(questions)
+            JOBS[job_id].update({"imported": imported, "message": f"Saved {imported}/{total} questions into {ops} grouped documents"})
+            if ops >= 400:
+                batch.commit(); batch = db.batch(); ops = 0
         if ops:
-            commit_batch(batch, sleep_after=False)
-        JOBS[job_id].update({"status": "done", "imported": imported, "message": f"Imported {imported} questions safely"})
+            batch.commit()
+        JOBS[job_id].update({"status": "done", "imported": imported, "message": f"Imported {imported} questions into {len(grouped)} grouped banks"})
     except Exception as exc:
         JOBS[job_id].update({"status": "error", "message": str(exc)})
     finally:
